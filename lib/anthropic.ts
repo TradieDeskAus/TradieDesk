@@ -75,7 +75,6 @@ Format the document clearly with proper headings. Use Australian English. Make i
   const message = await anthropic.messages.create({
     model: "claude-opus-4-8",
     max_tokens: 4000,
-    thinking: { type: "adaptive" },
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -150,7 +149,6 @@ Use Australian English. Format professionally. Make it look like it came from an
   const message = await anthropic.messages.create({
     model: "claude-opus-4-8",
     max_tokens: 2500,
-    thinking: { type: "adaptive" },
     messages: [{ role: "user", content: prompt }],
   });
 
