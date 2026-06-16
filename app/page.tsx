@@ -39,7 +39,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$49",
+    price: "$19.95",
     period: "/mo",
     docs: "100 documents/month",
     features: ["Everything in Starter", "100 docs per month", "Priority generation", "Email support"],
