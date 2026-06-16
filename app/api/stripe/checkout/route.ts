@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     line_items: [{ price: planConfig.priceId, quantity: 1 }],
     customer_email: user?.emailAddresses[0]?.emailAddress,
     metadata: { userId },
+    allow_promotion_codes: true,
     success_url: `${appUrl}/dashboard?upgraded=true`,
     cancel_url: `${appUrl}/#pricing`,
   });
