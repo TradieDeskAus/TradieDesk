@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!planConfig?.priceId) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
   const user = await currentUser();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tradie-desk.vercel.app";
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
