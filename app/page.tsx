@@ -89,9 +89,15 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Promo banner */}
       {showPromo && (
-        <div className="fixed top-0 w-full bg-brand-500 text-white text-center py-3 px-4 z-[60] text-sm sm:text-base font-bold shadow-lg animate-pulse">
-          🎉 LAUNCH OFFER — Use code <span className="bg-white text-brand-600 px-2 py-0.5 rounded-md mx-1 font-extrabold tracking-wide">TRADIE2026</span> for 3 months free on the Pro plan. Only 50 spots, ends 14 July 2026!
-        </div>
+        <a
+          href="#pricing"
+          className="fixed top-0 w-full bg-brand-500 text-white text-center py-3 px-4 z-[60] text-sm sm:text-base font-bold shadow-lg animate-pulse flex flex-wrap items-center justify-center gap-2 hover:bg-brand-600 transition"
+        >
+          <span>
+            🎉 LAUNCH OFFER — Use code <span className="bg-white text-brand-600 px-2 py-0.5 rounded-md mx-1 font-extrabold tracking-wide">TRADIE2026</span> for 3 months free on the Pro plan. Only 50 spots, ends 14 July 2026!
+          </span>
+          <span className="bg-gray-900 text-white px-3 py-1 rounded-full text-xs sm:text-sm font-extrabold underline-offset-2">Claim offer ↓</span>
+        </a>
       )}
 
       {/* Nav */}
@@ -217,6 +223,11 @@ export default function Home() {
             {plans.map((p) => (
               <div key={p.name} className={`rounded-2xl p-8 border-2 flex flex-col ${p.highlighted ? "border-brand-500 shadow-2xl scale-105 bg-orange-50" : "border-gray-200"}`}>
                 {p.highlighted && <div className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-3">Most Popular</div>}
+                {p.highlighted && showPromo && (
+                  <div className="text-xs font-bold text-white bg-brand-500 rounded-lg px-3 py-2 mb-3">
+                    Enter code <span className="bg-white text-brand-600 px-1.5 py-0.5 rounded">TRADIE2026</span> at checkout for 3 months free
+                  </div>
+                )}
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{p.name}</h3>
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className="text-4xl font-extrabold text-gray-900">{p.price}</span>
