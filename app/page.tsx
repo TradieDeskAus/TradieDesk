@@ -78,14 +78,24 @@ const faqs = [
   },
 ];
 
+const PROMO_EXPIRES = new Date("2026-07-14T23:59:59+10:00");
+
 export default function Home() {
   const { isSignedIn } = useUser();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const showPromo = new Date() < PROMO_EXPIRES;
 
   return (
     <main className="min-h-screen">
+      {/* Promo banner */}
+      {showPromo && (
+        <div className="fixed top-0 w-full bg-brand-500 text-white text-center py-3 px-4 z-[60] text-sm sm:text-base font-bold shadow-lg animate-pulse">
+          🎉 LAUNCH OFFER — Use code <span className="bg-white text-brand-600 px-2 py-0.5 rounded-md mx-1 font-extrabold tracking-wide">TRADIE2026</span> for 3 months free on the Pro plan. Only 50 spots, ends 14 July 2026!
+        </div>
+      )}
+
       {/* Nav */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur border-b border-gray-100 z-50">
+      <nav className={`fixed w-full bg-white/95 backdrop-blur border-b border-gray-100 z-50 ${showPromo ? "top-12" : "top-0"}`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🔧</span>
@@ -107,7 +117,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-28 pb-20 px-4 bg-gradient-to-b from-orange-50 to-white">
+      <section className={`pb-20 px-4 bg-gradient-to-b from-orange-50 to-white ${showPromo ? "pt-40" : "pt-28"}`}>
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-orange-100 text-brand-700 text-sm font-semibold px-4 py-2 rounded-full mb-6">
             🇦🇺 Built for Australian tradies
