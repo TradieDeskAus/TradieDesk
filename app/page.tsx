@@ -49,7 +49,7 @@ const plans = [
   },
   {
     name: "Business",
-    price: "$99",
+    price: "$79",
     period: "/mo",
     docs: "Unlimited documents",
     features: ["Everything in Pro", "Unlimited documents", "Multiple staff logins coming soon", "Phone support"],
