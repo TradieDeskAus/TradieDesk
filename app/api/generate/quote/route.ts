@@ -50,6 +50,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Job description and trade type are required." }, { status: 400 });
   }
 
+  const hours = parseFloat(input.estimatedHours);
+  const rate = parseFloat(input.hourlyRate);
+  if (input.estimatedHours && (isNaN(hours) || hours < 0 || hours > 10000)) {
+    return NextResponse.json({ error: "Invalid estimated hours." }, { status: 400 });
+  }
+  if (input.hourlyRate && (isNaN(rate) || rate < 0 || rate > 100000)) {
+    return NextResponse.json({ error: "Invalid hourly rate." }, { status: 400 });
+  }
+
   // Record usage before generating to prevent race-condition abuse
   await recordDoc(userId, "quote");
 
