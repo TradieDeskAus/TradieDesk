@@ -4,6 +4,13 @@ import { generateQuote, type QuoteInput } from "@/lib/anthropic";
 import { getMonthlyDocCount, getUserPlan, recordDoc } from "@/lib/supabase";
 import { PLANS } from "@/lib/stripe";
 
+const MAX_FIELD_LENGTH = 2000;
+
+function sanitize(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").slice(0, MAX_FIELD_LENGTH).trim();
+}
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
@@ -21,13 +28,35 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const input = (await req.json()) as QuoteInput;
+  let raw: Record<string, unknown>;
+  try {
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const input: QuoteInput = {
+    businessName: sanitize(raw.businessName),
+    clientName: sanitize(raw.clientName),
+    jobDescription: sanitize(raw.jobDescription),
+    tradeType: sanitize(raw.tradeType),
+    estimatedHours: sanitize(raw.estimatedHours),
+    hourlyRate: sanitize(raw.hourlyRate),
+    materials: sanitize(raw.materials),
+    gst: raw.gst === true,
+  };
+
   if (!input.jobDescription || !input.tradeType) {
     return NextResponse.json({ error: "Job description and trade type are required." }, { status: 400 });
   }
 
-  const content = await generateQuote(input);
+  // Record usage before generating to prevent race-condition abuse
   await recordDoc(userId, "quote");
 
-  return NextResponse.json({ content });
+  try {
+    const content = await generateQuote(input);
+    return NextResponse.json({ content });
+  } catch {
+    return NextResponse.json({ error: "Generation failed. Please try again." }, { status: 500 });
+  }
 }

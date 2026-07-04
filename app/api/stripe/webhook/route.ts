@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { upsertSubscription } from "@/lib/supabase";
+import { supabase, upsertSubscription } from "@/lib/supabase";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
-  const sig = req.headers.get("stripe-signature")!;
+  const sig = req.headers.get("stripe-signature");
+
+  if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
   let event: Stripe.Event;
   try {
@@ -30,9 +32,11 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
-    const { createClient } = await import("@supabase/supabase-js");
-    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { data } = await db.from("subscriptions").select("user_id").eq("stripe_customer_id", subscription.customer).single();
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("user_id")
+      .eq("stripe_customer_id", subscription.customer)
+      .single();
     if (data?.user_id) {
       await upsertSubscription(data.user_id, "starter", subscription.customer as string, "");
     }
