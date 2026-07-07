@@ -24,10 +24,35 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "TradieDesk",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  url: "https://tradiedeskapp.com.au",
+  description: "AI-powered SWMS generator, quote builder, and client email writer for Australian tradies.",
+  offers: [
+    { "@type": "Offer", name: "Starter", price: "0", priceCurrency: "AUD" },
+    { "@type": "Offer", name: "Pro", price: "19.95", priceCurrency: "AUD" },
+    { "@type": "Offer", name: "Business", price: "79", priceCurrency: "AUD" },
+  ],
+  audience: {
+    "@type": "Audience",
+    audienceType: "Australian tradies, electricians, plumbers, builders",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en-AU">
+        <head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+        </head>
         <body className={inter.className}>{children}</body>
       </html>
     </ClerkProvider>
