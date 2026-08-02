@@ -26,6 +26,12 @@ npm install
 - Create project → SQL Editor → paste supabase-schema.sql → Run
 - Copy Project URL + service_role key from Settings → API
 
+### Resend — resend.com (review request + lead notification emails)
+- Create account → API Keys → create a key → copy as RESEND_API_KEY
+- Domains → Add Domain → tradiedeskapp.com.au (or a subdomain like mail.tradiedeskapp.com.au)
+- Add the DKIM/SPF/DMARC records Resend gives you at your DNS provider (same place you added the Vercel/Clerk records)
+- Sends will fail or land in spam until this verifies — can take up to a few hours
+
 ## 4. Configure environment
 ```
 copy .env.local.example .env.local

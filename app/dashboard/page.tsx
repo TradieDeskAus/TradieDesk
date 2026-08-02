@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
-type Tool = "swms" | "quote" | "email";
+type Tool = "swms" | "quote" | "email" | "review";
 type EmailType = "follow_up" | "job_complete" | "variation" | "overdue_invoice" | "complaint_response" | "booking_confirm";
 
 interface MaterialRow {
@@ -60,6 +60,15 @@ export default function Dashboard() {
   // Email form
   const [email, setEmail] = useState({ emailType: "follow_up" as EmailType, businessName: "", clientName: "", jobDescription: "", extraDetails: "" });
 
+  // Review & Referral form
+  const [review, setReview] = useState({ clientName: "", clientEmail: "", businessName: "", jobDescription: "", googleReviewLink: "" });
+  const [reviewSending, setReviewSending] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Referral link (shown in sidebar regardless of active tool)
+  const [referral, setReferral] = useState<{ code: string; link: string; businessName: string | null; googleReviewLink: string | null } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
   useEffect(() => {
     fetch("/api/usage").then((r) => r.json()).then(setUsage);
     if (typeof window !== "undefined" && window.location.search.includes("upgraded=true")) {
@@ -67,6 +76,21 @@ export default function Dashboard() {
       setTimeout(() => setUpgraded(false), 5000);
     }
   }, [result]);
+
+  useEffect(() => {
+    fetch("/api/referral").then((r) => r.json()).then((data) => {
+      if (data.code) setReferral(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!referral) return;
+    setReview((r) => ({
+      ...r,
+      businessName: r.businessName || referral.businessName || "",
+      googleReviewLink: r.googleReviewLink || referral.googleReviewLink || "",
+    }));
+  }, [referral]);
 
   async function generate() {
     setLoading(true);
@@ -101,10 +125,40 @@ export default function Dashboard() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function sendReviewRequest() {
+    setReviewSending(true);
+    setReviewMessage(null);
+    try {
+      const res = await fetch("/api/review-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(review),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReviewMessage({ type: "error", text: data.error || "Something went wrong. Please try again." });
+      } else {
+        setReviewMessage({ type: "success", text: `Sent to ${review.clientEmail}!` });
+        setReview((r) => ({ ...r, clientName: "", clientEmail: "", jobDescription: "" }));
+      }
+    } catch {
+      setReviewMessage({ type: "error", text: "Something went wrong. Please try again." });
+    }
+    setReviewSending(false);
+  }
+
+  async function copyLink() {
+    if (!referral) return;
+    await navigator.clipboard.writeText(referral.link);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
+
   const tools = [
     { id: "swms" as Tool, label: "SWMS", icon: "🦺", desc: "Safe Work Method Statement" },
     { id: "quote" as Tool, label: "Quote", icon: "📋", desc: "Job quote with pricing" },
     { id: "email" as Tool, label: "Email", icon: "✉️", desc: "Client communications" },
+    { id: "review" as Tool, label: "Review & Referral", icon: "⭐", desc: "Ask for a review + get leads" },
   ];
 
   return (
@@ -181,6 +235,27 @@ export default function Dashboard() {
                     Upgrade plan
                   </Link>
                 )}
+              </div>
+            )}
+
+            {/* Referral link — always visible, independent of active tool */}
+            {referral && (
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Your referral link</h3>
+                <p className="text-xs text-gray-500 mb-3">Share this so people who need a tradie can reach you directly.</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={referral.link}
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 truncate"
+                  />
+                  <button
+                    onClick={copyLink}
+                    className="shrink-0 text-xs bg-brand-500 text-white px-3 py-2 rounded-lg hover:bg-brand-600 transition font-semibold"
+                  >
+                    {linkCopied ? "✓" : "Copy"}
+                  </button>
+                </div>
               </div>
             )}
           </aside>
@@ -383,6 +458,54 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Review & Referral Form */}
+              {activeTool === "review" && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-1">Review & Referral</h2>
+                    <p className="text-sm text-gray-500">Job done? Send the client a quick thank-you that asks for a Google review and lets them pass your details to anyone who needs a tradie.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Your business name *</label>
+                      <input type="text" value={review.businessName} onChange={(e) => setReview({ ...review, businessName: e.target.value })} placeholder="e.g. Smith Electrical" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Client name</label>
+                      <input type="text" value={review.clientName} onChange={(e) => setReview({ ...review, clientName: e.target.value })} placeholder="e.g. John Brown" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Client email *</label>
+                    <input type="email" value={review.clientEmail} onChange={(e) => setReview({ ...review, clientEmail: e.target.value })} placeholder="e.g. john@example.com" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">What was the job? *</label>
+                    <input type="text" value={review.jobDescription} onChange={(e) => setReview({ ...review, jobDescription: e.target.value })} placeholder="e.g. Replacing bathroom tap fittings at 42 Smith St" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Your Google review link</label>
+                    <input type="url" value={review.googleReviewLink} onChange={(e) => setReview({ ...review, googleReviewLink: e.target.value })} placeholder="Paste your Google Business review link" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    <p className="mt-1 text-xs text-gray-400">Find this in Google Business Profile → Get more reviews. Saved for next time.</p>
+                  </div>
+
+                  {reviewMessage && (
+                    <p className={`text-sm font-medium ${reviewMessage.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                      {reviewMessage.text}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={sendReviewRequest}
+                    disabled={reviewSending}
+                    className="w-full bg-brand-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-brand-600 disabled:opacity-50 transition"
+                  >
+                    {reviewSending ? "Sending…" : "Send review request →"}
+                  </button>
+                </div>
+              )}
+
+              {activeTool !== "review" && (
               <button
                 onClick={generate}
                 disabled={loading}
@@ -400,10 +523,11 @@ export default function Dashboard() {
                   `Generate ${activeTool === "swms" ? "SWMS" : activeTool === "quote" ? "Quote" : "Email"} →`
                 )}
               </button>
+              )}
             </div>
 
             {/* Result */}
-            {result && (
+            {activeTool !== "review" && result && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-900">Your document is ready</h3>
